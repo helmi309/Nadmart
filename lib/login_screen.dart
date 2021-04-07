@@ -68,6 +68,7 @@ class _WebViewExampleState extends State<LoginScreen> {
                 }
                 return child;
               },
+
               child: Builder(builder: (BuildContext context) {
                 return RefreshIndicator(
                     onRefresh: _onRefresh,
@@ -77,7 +78,7 @@ class _WebViewExampleState extends State<LoginScreen> {
 
                         child: Container(
                             child: WebView(
-                              initialUrl: 'https://flutter.dev/',
+                              initialUrl: 'https://nadmartpo.com/',
                               javascriptMode: JavascriptMode.unrestricted,
                               onWebViewCreated:
                                   (WebViewController webViewController) {
@@ -114,7 +115,7 @@ class _WebViewExampleState extends State<LoginScreen> {
                                 },
                               gestureNavigationEnabled: true,
                             ),
-                          height: webViewHeight != null ? webViewHeight : 300,
+                          height: webViewHeight != null ? webViewHeight : 900,
 
                           // height: max(MediaQuery.of(context).size.height, contentHeight),
                         )));
