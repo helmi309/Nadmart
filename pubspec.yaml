@@ -23,7 +23,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter: ^2.0.2
+  webview_flutter:
+    git:
+      url: https://github.com/sageata/plugins.git
+      ref: pull-to-refresh
+      path: packages/webview_flutter
   flutter_launcher_icons: "^0.8.0"
   flutter_offline: "^2.0.0"
   pull_to_refresh: ^1.6.4

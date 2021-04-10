@@ -70,16 +70,14 @@ class _WebViewExampleState extends State<LoginScreen> {
               },
 
               child: Builder(builder: (BuildContext context) {
-                return RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: SingleChildScrollView(
-                         physics: AlwaysScrollableScrollPhysics(),
-                        // physics: NeverScrollableScrollPhysics(),
-
-                        child: Container(
-                            child: WebView(
+                return WebView(
                               initialUrl: 'https://nadmartpo.com/',
                               javascriptMode: JavascriptMode.unrestricted,
+                              onPullToRefresh: () async {
+                                controllerGlobal.reload();
+                                return;
+                              },
+
                               onWebViewCreated:
                                   (WebViewController webViewController) {
                                 _controller.complete(webViewController);
@@ -105,20 +103,18 @@ class _WebViewExampleState extends State<LoginScreen> {
                               },
                               onPageFinished: (String url) async  {
                                 print('Page finished loading: $url');
-                                if (controllerGlobal != null) {
+                                // if (controllerGlobal != null) {
                                   webViewHeight = double.tryParse(
                                       await controllerGlobal
                                       .evaluateJavascript("document.documentElement.scrollHeight;"),
-                                );
+
+                                  );
                                 setState(() {});
-                              }
+                              // }
                                 },
                               gestureNavigationEnabled: true,
-                            ),
-                          height: webViewHeight != null ? webViewHeight : 900,
+                            );
 
-                          // height: max(MediaQuery.of(context).size.height, contentHeight),
-                        )));
               })),
         ));
   }

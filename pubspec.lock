@@ -255,10 +255,12 @@ packages:
   webview_flutter:
     dependency: "direct main"
     description:
-      name: webview_flutter
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.2"
+      path: "packages/webview_flutter"
+      ref: pull-to-refresh
+      resolved-ref: "61209ab009cdeb43601719e4472efd4df2e7a5ba"
+      url: "https://github.com/sageata/plugins.git"
+    source: git
+    version: "2.0.3"
   wifi_info_flutter:
     dependency: transitive
     description:
