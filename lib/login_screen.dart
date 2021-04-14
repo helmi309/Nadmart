@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_offline/flutter_offline.dart';
+import 'package:flutter/services.dart';
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -25,11 +27,6 @@ class _WebViewExampleState extends State<LoginScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
   double webViewHeight;
-
-  Future _onRefresh() async {
-    controllerGlobal.reload();
-  }
-
   @override
   void initState() {
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
@@ -38,12 +35,19 @@ class _WebViewExampleState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: HexColor("#FFFFFF"),
+      statusBarBrightness: Brightness.light
+    ));
     return WillPopScope(
         onWillPop: () => _exitApp(context),
         child: Scaffold(
           appBar: PreferredSize(
+
               preferredSize: Size.fromHeight(0), // here the desired height
               child: AppBar(
+                bottomOpacity: 0.0,
+                elevation: 0.0,
                 actions: <Widget>[
                   NavigationControls(_controller.future),
                 ],
@@ -194,4 +198,15 @@ class NavigationControls extends StatelessWidget {
       },
     );
   }
+}
+class HexColor extends Color {
+  static int _getColorFromHex(String hexColor) {
+    hexColor = hexColor.toUpperCase().replaceAll("#", "");
+    if (hexColor.length == 6) {
+      hexColor = "FF" + hexColor;
+    }
+    return int.parse(hexColor, radix: 16);
+  }
+
+  HexColor(final String hexColor) : super(_getColorFromHex(hexColor));
 }
