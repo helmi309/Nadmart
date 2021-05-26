@@ -4,7 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_offline/flutter_offline.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+_launchURL(url) async {
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+DateTime currentBackPressTime;
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -16,10 +25,29 @@ class LoginScreen extends StatefulWidget {
 WebViewController controllerGlobal;
 
 Future<bool> _exitApp(BuildContext context) async {
-  if (await controllerGlobal.canGoBack()) {
+
+
+  if (await controllerGlobal.canGoBack() && await controllerGlobal.currentUrl() != 'https://nadmartpo.com/') {
+
     controllerGlobal.goBack();
+    // return Future.value(true);
   } else {
-    exit(0);
+    if( await controllerGlobal.currentUrl() == 'https://nadmartpo.com/'){
+      DateTime now = DateTime.now();
+      if (currentBackPressTime == null ||
+          now.difference(currentBackPressTime) > Duration(seconds: 5)) {
+        currentBackPressTime = now;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('klik sekali lagi untuk keluar'),
+          ),
+        );
+      }
+      else{
+        SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+      }
+    }
+
   }
 }
 
@@ -27,8 +55,12 @@ class _WebViewExampleState extends State<LoginScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
   double webViewHeight;
+  final _key = UniqueKey();
+  bool _load = false;
+
   @override
   void initState() {
+
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
     super.initState();
   }
@@ -43,7 +75,6 @@ class _WebViewExampleState extends State<LoginScreen> {
         onWillPop: () => _exitApp(context),
         child: Scaffold(
           appBar: PreferredSize(
-
               preferredSize: Size.fromHeight(0), // here the desired height
               child: AppBar(
                 bottomOpacity: 0.0,
@@ -74,7 +105,9 @@ class _WebViewExampleState extends State<LoginScreen> {
               },
 
               child: Builder(builder: (BuildContext context) {
-                return WebView(
+                return Stack(
+                  children: <Widget>[
+                    WebView(
                               initialUrl: 'https://nadmartpo.com/',
                               javascriptMode: JavascriptMode.unrestricted,
                               onPullToRefresh: () async {
@@ -87,6 +120,9 @@ class _WebViewExampleState extends State<LoginScreen> {
                                 _controller.complete(webViewController);
                               },
                               onProgress: (int progress) {
+                                setState((){
+                                  _load=true;
+                                });
                                 print(
                                     "WebView is loading (progress : $progress%)");
                               },
@@ -99,6 +135,13 @@ class _WebViewExampleState extends State<LoginScreen> {
                                   print('blocking navigation to $request}');
                                   return NavigationDecision.prevent;
                                 }
+                                if (request.url.contains("mailto:") || request.url.contains("tel:") || request.url.startsWith('https://api.whatsapp.com/')) {
+                                  _launchURL(request.url);
+                                  return NavigationDecision.prevent;
+                                }
+                                if(request.url == "https://api.whatsapp.com/send/"){
+                                  Navigator.of(context).pop(); //close webview
+                                }
                                 print('allowing navigation to $request');
                                 return NavigationDecision.navigate;
                               },
@@ -107,18 +150,22 @@ class _WebViewExampleState extends State<LoginScreen> {
                               },
                               onPageFinished: (String url) async  {
                                 print('Page finished loading: $url');
-                                // if (controllerGlobal != null) {
                                   webViewHeight = double.tryParse(
                                       await controllerGlobal
                                       .evaluateJavascript("document.documentElement.scrollHeight;"),
-
                                   );
-                                setState(() {});
-                              // }
+                                setState((){
+                                  _load=false;
+                                });
+
                                 },
                               gestureNavigationEnabled: true,
-                            );
+                            ),
+                    _load ? Center( child: CircularProgressIndicator())
+                        : Stack(),
 
+                  ]
+                );
               })),
         ));
   }

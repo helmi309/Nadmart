@@ -1,4 +1,4 @@
-package com.nadmart
+package com.ponadmart
 
 import io.flutter.embedding.android.FlutterActivity
 
