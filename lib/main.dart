@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nadmart/splash_screen.dart';
-import 'package:nadmart/login_screen.dart';
+import 'package:nadmartpo/splash_screen.dart';
+import 'package:nadmartpo/login_screen.dart';
 
 void main() => runApp(MyApp());
 

@@ -55,6 +55,7 @@ class _WebViewExampleState extends State<LoginScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
   double webViewHeight;
+   Timer _timer;
   final _key = UniqueKey();
   bool _load = false;
 
@@ -123,6 +124,13 @@ class _WebViewExampleState extends State<LoginScreen> {
                                 setState((){
                                   _load=true;
                                 });
+                              if(progress == 100){
+                                    return _timer = Timer(Duration(seconds: 3), () {
+                                                setState((){
+                                                  _load=false;
+                                                });
+                                    });
+                              }
                                 print(
                                     "WebView is loading (progress : $progress%)");
                               },
@@ -161,9 +169,10 @@ class _WebViewExampleState extends State<LoginScreen> {
                                 },
                               gestureNavigationEnabled: true,
                             ),
-                    _load ? Center( child: CircularProgressIndicator())
+                    _load ? Center( child:  Scaffold(
+                                              backgroundColor: Colors.white,
+                                              body: Center(child: CircularProgressIndicator())))
                         : Stack(),
-
                   ]
                 );
               })),

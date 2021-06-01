@@ -2,7 +2,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:nadmart/login_screen.dart';
+import 'package:nadmartpo/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   static const String id = "splash_screen";
