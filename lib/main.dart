@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nadmartpo/splash_screen.dart';
 import 'package:nadmartpo/login_screen.dart';
 
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {

@@ -5,6 +5,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_offline/flutter_offline.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+
 
 _launchURL(url) async {
   if (await canLaunch(url)) {
@@ -13,6 +16,7 @@ _launchURL(url) async {
     throw 'Could not launch $url';
   }
 }
+
 DateTime currentBackPressTime;
 
 class LoginScreen extends StatefulWidget {
@@ -25,29 +29,25 @@ class LoginScreen extends StatefulWidget {
 WebViewController controllerGlobal;
 
 Future<bool> _exitApp(BuildContext context) async {
-
-
-  if (await controllerGlobal.canGoBack() && await controllerGlobal.currentUrl() != 'https://nadmartpo.com/') {
-
+  if (await controllerGlobal.canGoBack() &&
+      (await controllerGlobal.currentUrl() != 'https://nadmartpo.com/' || await controllerGlobal.currentUrl() != 'https://nadmartpo.com/my-account-2/')) {
     controllerGlobal.goBack();
     // return Future.value(true);
   } else {
-    if( await controllerGlobal.currentUrl() == 'https://nadmartpo.com/'){
+    if (await controllerGlobal.currentUrl() == 'https://nadmartpo.com/' || await controllerGlobal.currentUrl() == 'https://nadmartpo.com/my-account-2/') {
       DateTime now = DateTime.now();
       if (currentBackPressTime == null ||
-          now.difference(currentBackPressTime) > Duration(seconds: 5)) {
+          now.difference(currentBackPressTime) > Duration(seconds: 10)) {
         currentBackPressTime = now;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('klik sekali lagi untuk keluar'),
           ),
         );
-      }
-      else{
+      } else {
         SystemChannels.platform.invokeMethod('SystemNavigator.pop');
       }
     }
-
   }
 }
 
@@ -55,13 +55,18 @@ class _WebViewExampleState extends State<LoginScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
   double webViewHeight;
-   Timer _timer;
+  Timer _timer;
   final _key = UniqueKey();
   bool _load = false;
+  int percent = 0;
+
+  Future<void> secureScreen() async {
+    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  }
 
   @override
   void initState() {
-
+    secureScreen();
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
     super.initState();
   }
@@ -69,9 +74,8 @@ class _WebViewExampleState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: HexColor("#FFFFFF"),
-      statusBarBrightness: Brightness.light
-    ));
+        statusBarColor: HexColor("#FFFFFF"),
+        statusBarBrightness: Brightness.light));
     return WillPopScope(
         onWillPop: () => _exitApp(context),
         child: Scaffold(
@@ -104,77 +108,87 @@ class _WebViewExampleState extends State<LoginScreen> {
                 }
                 return child;
               },
-
               child: Builder(builder: (BuildContext context) {
-                return Stack(
-                  children: <Widget>[
-                    WebView(
-                              initialUrl: 'https://nadmartpo.com/',
-                              javascriptMode: JavascriptMode.unrestricted,
-                              onPullToRefresh: () async {
-                                controllerGlobal.reload();
-                                return;
-                              },
+                return Stack(children: <Widget>[
+                  WebView(
+                    initialUrl: 'https://nadmartpo.com/',
+                    javascriptMode: JavascriptMode.unrestricted,
+                    onPullToRefresh: () async {
+                      controllerGlobal.reload();
+                      return;
+                    },
+                    onWebViewCreated: (WebViewController webViewController) {
+                      _controller.complete(webViewController);
+                    },
+                    onProgress: (int progress) {
+                      setState(() {
+                        _load = true;
+                        percent = progress;
+                      });
+                      if (progress == 100) {
+                        return _timer = Timer(Duration(seconds: 3), () {
+                          setState(() {
+                            _load = false;
+                          });
+                        });
+                      }
+                      print("WebView is loading (progress : $progress%)");
+                    },
+                    javascriptChannels: <JavascriptChannel>{
+                      _toasterJavascriptChannel(context),
+                    },
+                    navigationDelegate: (NavigationRequest request) {
+                      if (request.url.startsWith('https://youtube.com/')) {
+                        print('blocking navigation to $request}');
+                        return NavigationDecision.prevent;
+                      }
+                      if (request.url.contains("mailto:") ||
+                          request.url.contains("tel:") ||
+                          request.url.startsWith('https://api.whatsapp.com/')) {
+                        _launchURL(request.url);
+                        return NavigationDecision.prevent;
+                      }
+                      if (request.url == "https://api.whatsapp.com/send/") {
+                        Navigator.of(context).pop(); //close webview
+                      }
+                      print('allowing navigation to $request');
+                      return NavigationDecision.navigate;
+                    },
+                    onPageStarted: (String url) {
+                      // setState(() {
+                      //   _load = true;
+                      // });
 
-                              onWebViewCreated:
-                                  (WebViewController webViewController) {
-                                _controller.complete(webViewController);
-                              },
-                              onProgress: (int progress) {
-                                setState((){
-                                  _load=true;
-                                });
-                              if(progress == 100){
-                                    return _timer = Timer(Duration(seconds: 3), () {
-                                                setState((){
-                                                  _load=false;
-                                                });
-                                    });
-                              }
-                                print(
-                                    "WebView is loading (progress : $progress%)");
-                              },
-                              javascriptChannels: <JavascriptChannel>{
-                                _toasterJavascriptChannel(context),
-                              },
-                              navigationDelegate: (NavigationRequest request) {
-                                if (request.url
-                                    .startsWith('https://youtube.com/')) {
-                                  print('blocking navigation to $request}');
-                                  return NavigationDecision.prevent;
-                                }
-                                if (request.url.contains("mailto:") || request.url.contains("tel:") || request.url.startsWith('https://api.whatsapp.com/')) {
-                                  _launchURL(request.url);
-                                  return NavigationDecision.prevent;
-                                }
-                                if(request.url == "https://api.whatsapp.com/send/"){
-                                  Navigator.of(context).pop(); //close webview
-                                }
-                                print('allowing navigation to $request');
-                                return NavigationDecision.navigate;
-                              },
-                              onPageStarted: (String url) {
-                                print('Page started loading: $url');
-                              },
-                              onPageFinished: (String url) async  {
-                                print('Page finished loading: $url');
-                                  webViewHeight = double.tryParse(
-                                      await controllerGlobal
-                                      .evaluateJavascript("document.documentElement.scrollHeight;"),
-                                  );
-                                setState((){
-                                  _load=false;
-                                });
+                      print('Page started loading: $url');
+                    },
+                    onPageFinished: (String url) async {
+                      print('Page finished loading: $url');
+                      webViewHeight = double.tryParse(
+                        await controllerGlobal.evaluateJavascript(
+                            "document.documentElement.scrollHeight;"),
+                      );
+                      setState(() {
+                        _load = false;
+                      });
+                    },
+                    gestureNavigationEnabled: true,
+                  ),
+                  _load
+                      ? Container(
+                          child: LinearPercentIndicator(
+                            //leaner progress bar
+                            // animation: true,
+                            // animationDuration: 1000,
+                            lineHeight: 5.0,
+                            percent: percent / 100,
 
-                                },
-                              gestureNavigationEnabled: true,
-                            ),
-                    _load ? Center( child:  Scaffold(
-                                              backgroundColor: Colors.white,
-                                              body: Center(child: CircularProgressIndicator())))
-                        : Stack(),
-                  ]
-                );
+                            linearStrokeCap: LinearStrokeCap.roundAll,
+                            progressColor: Colors.blue[400],
+                            backgroundColor: Colors.grey[300],
+                          ),
+                        )
+                      : Stack(),
+                ]);
               })),
         ));
   }
@@ -254,7 +268,9 @@ class NavigationControls extends StatelessWidget {
       },
     );
   }
+
 }
+
 class HexColor extends Color {
   static int _getColorFromHex(String hexColor) {
     hexColor = hexColor.toUpperCase().replaceAll("#", "");
